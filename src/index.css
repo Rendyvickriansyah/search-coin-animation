@@ -4,6 +4,8 @@
   /* Neue Montreal is the design font. It is a licensed font: drop the files in
      and add an @font-face here. Until then the fallbacks are used. */
   --font-sans: "Neue Montreal", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-geist: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, Consolas, monospace;
 }
 
 html {
@@ -33,5 +35,97 @@ body {
 }
 .coin-scroll::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+
+/* Live indicator: the dot blinks and throws off a fading ring, forever. */
+@keyframes live-blink {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0.3;
+    scale: 0.8;
+  }
+}
+@keyframes live-ping {
+  from {
+    opacity: 0.7;
+    scale: 0.5;
+  }
+  80%,
+  to {
+    opacity: 0;
+    scale: 2.2;
+  }
+}
+.live-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: live-blink 0.7s ease-in-out infinite alternate;
+}
+.live-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #47bb64;
+  animation: live-ping 1.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .live-ring::before {
+    animation: none;
+  }
+  .live-ring::before {
+    opacity: 0;
+  }
+}
+
+/* Position-size slider: a thin track filled up to the thumb, white round thumb. */
+.size-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.size-slider::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #fff var(--pct), rgba(255, 255, 255, 0.2) var(--pct));
+}
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.7);
+}
+.size-slider::-moz-range-track {
+  height: 2px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.size-slider::-moz-range-progress {
+  height: 2px;
+  border-radius: 9999px;
+  background: #fff;
+}
+.size-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.7);
+}
+.size-slider:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 4px;
   border-radius: 9999px;
 }

@@ -1,3 +1,6 @@
+import ada from '../assets/app/ada.svg'
+import dot from '../assets/app/dot-coin.svg'
+import ltc from '../assets/app/ltc.svg'
 import bnb from '../assets/coin/bnb.svg'
 import btcMask from '../assets/coin/btc-mask.svg'
 import btc from '../assets/coin/btc.svg'
@@ -52,6 +55,24 @@ function Glyph({ symbol }: { symbol: CoinSymbol }) {
         <span className={`${RING} bg-black`}>
           <span className="absolute inset-[calc(35.26%-0.29px)_calc(28.13%-0.44px)_calc(35.06%-0.3px)_calc(25%-0.5px)]">
             <img alt="" src={sol} className="absolute inset-0 block size-full max-w-none" />
+          </span>
+        </span>
+      )
+    case 'LTC':
+      return <img alt="" src={ltc} className="block size-4 shrink-0" />
+    case 'DOT':
+      return (
+        <span className={`${RING} bg-[#fe266f]`}>
+          <span className="absolute inset-[calc(21.43%-0.46px)_calc(24.93%-0.4px)_calc(24.75%-0.41px)_calc(25%-0.4px)]">
+            <img alt="" src={dot} className="absolute inset-0 block size-full max-w-none" />
+          </span>
+        </span>
+      )
+    case 'ADA':
+      return (
+        <span className={`${RING} bg-white`}>
+          <span className="absolute inset-[calc(15.57%-0.55px)_calc(10.72%-0.63px)_calc(15.12%-0.56px)_calc(14.19%-0.57px)]">
+            <img alt="" src={ada} className="absolute inset-0 block size-full max-w-none" />
           </span>
         </span>
       )

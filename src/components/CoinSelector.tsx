@@ -7,7 +7,10 @@ import sortIcon from '../assets/coin/sort.svg'
 import starFill from '../assets/coin/star-fill.svg'
 import starLine from '../assets/coin/star-line.svg'
 import { COINS, type Coin } from '../data/coins'
+import { getQuote, useQuote } from '../data/livePrices'
+import { fmtPrice, fmtSignedPct } from '../lib/format'
 import { CoinIcon } from './CoinIcon'
+import { FlashValue } from './FlashValue'
 
 // Chevron swap: bounce-free spring.
 const SPRING = { type: 'spring', duration: 0.35, bounce: 0 } as const
@@ -29,9 +32,16 @@ const COLUMNS: { key: SortKey; label: string; width: string }[] = [
   { key: 'maxLeverage', label: 'Maks', width: 'w-[90px]' },
 ]
 
-export function CoinSelector() {
+export function CoinSelector({
+  value,
+  onChange,
+}: {
+  /** Id of the selected coin. */
+  value: string
+  onChange: (coin: Coin) => void
+}) {
   const [open, setOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState(COINS[0].id)
+  const selectedId = value
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<Sort>(null)
   const [favorites, setFavorites] = useState(
@@ -52,7 +62,9 @@ export function CoinSelector() {
       : COINS
     if (!sort) return filtered
     const sign = sort.dir === 'asc' ? 1 : -1
-    return [...filtered].sort((a, b) => (a[sort.key] - b[sort.key]) * sign)
+    const read = (coin: Coin) =>
+      sort.key === 'maxLeverage' ? coin.maxLeverage : getQuote(coin.symbol)[sort.key]
+    return [...filtered].sort((a, b) => (read(a) - read(b)) * sign)
   }, [query, sort])
 
   function close(returnFocus = false) {
@@ -97,7 +109,7 @@ export function CoinSelector() {
   }
 
   function select(coin: Coin) {
-    setSelectedId(coin.id)
+    onChange(coin)
     close(true)
   }
 
@@ -180,52 +192,16 @@ export function CoinSelector() {
                     <p className="px-5 py-6 text-xs text-[#bbb]">Coin tidak ditemukan</p>
                   ) : (
                     <ul className="mr-2">
-                      {rows.map((coin) => {
-                        const isSelected = coin.id === selectedId
-                        const isFavorite = favorites.has(coin.id)
-                        return (
-                          <li
-                            key={coin.id}
-                            className={`flex h-10 items-center border-y text-xs leading-[1.4] hover:bg-white/5 ${isSelected ? 'border-white/5 bg-white/5' : 'border-transparent'}`}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => toggleFavorite(coin.id)}
-                              aria-pressed={isFavorite}
-                              aria-label={`Favoritkan ${coin.name}`}
-                              className="flex h-full shrink-0 items-center pr-3 pl-5 outline-none focus-visible:bg-white/10"
-                            >
-                              <img
-                                alt=""
-                                src={isFavorite ? starFill : starLine}
-                                className="block size-3"
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => select(coin)}
-                              aria-current={isSelected}
-                              className="flex h-full min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:bg-white/10"
-                            >
-                              <span className="flex min-w-0 flex-1 items-center gap-2 px-3">
-                                <CoinIcon symbol={coin.symbol} />
-                                <span className="font-medium whitespace-nowrap text-white">
-                                  {coin.pair}
-                                </span>
-                              </span>
-                              <span className="flex items-center text-right whitespace-nowrap text-white tabular-nums">
-                                <span className="w-[100px] px-3">{coin.priceLabel}</span>
-                                <span
-                                  className={`w-[90px] px-3 ${coin.change >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}
-                                >
-                                  {coin.changeLabel}
-                                </span>
-                                <span className="w-[90px] px-3">{coin.maxLeverage}x</span>
-                              </span>
-                            </button>
-                          </li>
-                        )
-                      })}
+                      {rows.map((coin) => (
+                        <CoinRow
+                          key={coin.id}
+                          coin={coin}
+                          selected={coin.id === selectedId}
+                          favorite={favorites.has(coin.id)}
+                          onFavorite={() => toggleFavorite(coin.id)}
+                          onSelect={() => select(coin)}
+                        />
+                      ))}
                     </ul>
                   )}
                 </div>
@@ -254,5 +230,59 @@ function ChevronSwap({ visible, src }: { visible: boolean; src: string }) {
       }}
       className="absolute inset-0 block size-5"
     />
+  )
+}
+
+/** Subscribes to its own coin, so a tick re-renders this row only. */
+function CoinRow({
+  coin,
+  selected,
+  favorite,
+  onFavorite,
+  onSelect,
+}: {
+  coin: Coin
+  selected: boolean
+  favorite: boolean
+  onFavorite: () => void
+  onSelect: () => void
+}) {
+  const quote = useQuote(coin.symbol)
+  const up = quote.change >= 0
+
+  return (
+    <li
+      className={`flex h-10 items-center border-y text-xs leading-[1.4] hover:bg-white/5 ${selected ? 'border-white/5 bg-white/5' : 'border-transparent'}`}
+    >
+      <button
+        type="button"
+        onClick={onFavorite}
+        aria-pressed={favorite}
+        aria-label={`Favoritkan ${coin.name}`}
+        className="flex h-full shrink-0 items-center pr-3 pl-5 outline-none focus-visible:bg-white/10"
+      >
+        <img alt="" src={favorite ? starFill : starLine} className="block size-3" />
+      </button>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={selected}
+        className="flex h-full min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:bg-white/10"
+      >
+        <span className="flex min-w-0 flex-1 items-center gap-2 px-3">
+          <CoinIcon symbol={coin.symbol} />
+          <span className="font-medium whitespace-nowrap text-white">{coin.pair}</span>
+        </span>
+        <span className="flex items-center text-right whitespace-nowrap text-white tabular-nums">
+          <span className="flex w-[100px] justify-end px-3">
+            <FlashValue value={quote.live ? quote.price : null}>{fmtPrice(quote.price)}</FlashValue>
+          </span>
+          <span className={`w-[90px] px-3 ${up ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
+            {fmtSignedPct(quote.change, 2).replace('-', '−')}
+          </span>
+          <span className="w-[90px] px-3">{coin.maxLeverage}x</span>
+        </span>
+      </button>
+    </li>
   )
 }
